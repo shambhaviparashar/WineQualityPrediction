@@ -4,14 +4,15 @@ from pyspark.sql.functions import col, when
 from pyspark.ml import PipelineModel
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 
-if len(sys.argv) != 3:
-    print("Usage: python predict.py <validation_dataset_path> <model_path>")
+if len(sys.argv) != 2:
+    print("Usage: python predict.py <validation_dataset_path>")
     sys.exit(1)
 
 validation_dataset_path = sys.argv[1]
-model_path = sys.argv[2]
 
-# Initialize SparkSession
+# Known fixed model path inside the container
+model_path = "/app/model"
+
 spark = SparkSession.builder \
     .appName("WineQualityPrediction") \
     .getOrCreate()
@@ -29,10 +30,10 @@ df = clean_column_names(df)
 # Convert to binary label
 df = df.withColumn("quality_label", when(col("quality") >= 7, 1).otherwise(0))
 
-# Load the trained model
+# Load the trained model from the fixed path
 model = PipelineModel.load(model_path)
 
-# Apply the model to the validation data
+# Apply the model to the validation dataset
 predictions = model.transform(df)
 
 # Evaluate using F1 score
